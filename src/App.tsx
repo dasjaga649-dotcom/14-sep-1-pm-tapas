@@ -88,6 +88,7 @@ export default function App() {
 
   function normalizeAttractions(input: any): Attraction[] | null {
     const arr: any[] | undefined = Array.isArray(input?.attractionsData) ? input.attractionsData
+      : Array.isArray(input?.dbData) ? input.dbData
       : Array.isArray(input?.attractions) ? input.attractions
       : Array.isArray(input?.items) ? input.items
       : Array.isArray(input?.data) ? input.data
@@ -95,13 +96,16 @@ export default function App() {
     if (!arr || arr.length === 0) return null;
     return arr.map((it: any, idx: number): Attraction => {
       const title = it.title || it.name || it.placeName || `Attraction ${idx + 1}`;
-      const location = it.location || it.city || it.address || [it.city, it.state].filter(Boolean).join(', ');
+      const locName = typeof it.location === 'string' ? it.location : it.location?.name;
+      const location = locName || it.city || it.address || [it.city, it.state].filter(Boolean).join(', ');
       const ratingRaw = it.rating ?? it.stars ?? it.score;
       const rating = typeof ratingRaw === 'string' ? parseFloat(ratingRaw) : typeof ratingRaw === 'number' ? ratingRaw : undefined;
-      const imageUrl = it.imageUrl || it.image || it.photo || it.picture || it.thumbnail;
+      const firstImage = Array.isArray(it.imagelinks) ? it.imagelinks[0] : undefined;
+      const imageUrl = it.imageUrl || it.image || it.photo || it.picture || it.thumbnail || firstImage;
       const description = it.description || it.desc || it.summary || it.about;
       const link = it.link || it.url || it.more || undefined;
-      return { id: it.id ?? idx, title, location, rating, imageUrl, description, link };
+      const id = it.id ?? it.attraction_id ?? idx;
+      return { id, title, location, rating, imageUrl, description, link };
     });
   }
 
