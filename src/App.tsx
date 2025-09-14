@@ -1,6 +1,6 @@
 import './App.css';
 import './chat.css';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { sendChat } from './api/chat';
@@ -34,6 +34,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const endRef = useRef<HTMLDivElement | null>(null);
   const apiBase = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
 
   function toAssistantMessage(data: unknown, contentType?: string): ChatMessage {
@@ -88,6 +89,12 @@ export default function App() {
     }
   }
 
+  useEffect(() => {
+    if (open && endRef.current) {
+      endRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, open]);
+
   return (
     <div className="App">
       <header className="App-header">
@@ -137,18 +144,32 @@ export default function App() {
                 <MessageContent m={m} />
               </div>
             ))}
+            <div ref={endRef} />
           </div>
           {error && <div className="chat-error" role="alert">{error}</div>}
         </div>
         <form className="chat-widget-input" onSubmit={onSubmit}>
-          <input
-            className="input prompt-input"
-            value={userPrompt}
-            onChange={e => setUserPrompt(e.target.value)}
-            placeholder="Type your message..."
-            aria-label="Message"
-          />
-          <button className="btn send-btn" type="submit" disabled={loading}>{loading ? '...' : 'Send'}</button>
+          <div className="composer">
+            <button type="button" className="composer-icon attach" aria-label="Attach">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#000" d="M16.5 6.5v8.25a4.75 4.75 0 1 1-9.5 0V6.25a3.25 3.25 0 1 1 6.5 0v7.75a1.75 1.75 0 1 1-3.5 0V7.5a.75.75 0 0 1 1.5 0v6.5a.25.25 0 1 0 .5 0V6.25a1.75 1.75 0 1 0-3.5 0v8.5a3.25 3.25 0 1 0 6.5 0V6.5a.75.75 0 0 1 1.5 0Z"/></svg>
+            </button>
+            <input
+              className="input prompt-input"
+              value={userPrompt}
+              onChange={e => setUserPrompt(e.target.value)}
+              placeholder="Type your message"
+              aria-label="Message"
+              type="text"
+            />
+            <button type="button" className="composer-icon emoji" aria-label="Emoji">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#000" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3 7a1.25 1.25 0 1 1 0 2.5A1.25 1.25 0 0 1 9 9Zm9 3a6 6 0 1 1-12 0 .75.75 0 0 1 1.5 0 4.5 4.5 0 1 0 9 0 .75.75 0 0 1 1.5 0ZM16 9a1.25 1.25 0 1 1 0 2.5A1.25 1.25 0 0 1 16 9Z"/></svg>
+            </button>
+          </div>
+          <button className="btn send-btn" type="submit" disabled={loading} aria-label="Send">
+            {loading ? <span>...</span> : (
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#000" d="M2.3 3.3a1 1 0 0 1 1.1-.2l18 8a1 1 0 0 1 0 1.8l-18 8a1 1 0 0 1-1.4-1.2l2.3-6.2L13 12 4.3 9.5 2 3.9a1 1 0 0 1 .3-1Z"/></svg>
+            )}
+          </button>
         </form>
       </div>
     </div>
