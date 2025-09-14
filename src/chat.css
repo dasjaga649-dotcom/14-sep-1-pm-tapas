@@ -44,6 +44,7 @@
 .bubble { max-width: 80%; padding: 8px 12px; border-radius: 18px; line-height: 1.4; word-wrap: break-word; }
 .bubble-user { align-self: flex-end; background: #61dafb; color: #000; border-bottom-right-radius: 4px; }
 .bubble-assistant { align-self: flex-start; background: #f2f2f7; color: #000; border-bottom-left-radius: 4px; }
+.bubble-cards { align-self: stretch; background: transparent; padding: 0; max-width: 100%; }
 
 /* Input */
 .chat-widget-input { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 10px 14px 18px; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; background: #fff; align-items: center; }
@@ -63,6 +64,19 @@
 .actions { display: flex; justify-content: flex-end; }
 .btn { padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); background: #61dafb; color: #000; cursor: pointer; }
 .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Attractions cards */
+.attractions-cards { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.attraction-card { background: #fff; color: #000; border-radius: 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid rgba(0,0,0,0.06); }
+.attraction-image-wrap { width: 100%; aspect-ratio: 16/9; background: #f2f2f7; }
+.attraction-image { width: 100%; height: 100%; object-fit: cover; display: block; }
+.attraction-body { padding: 12px; display: grid; gap: 8px; }
+.attraction-title { margin: 0; font-size: 16px; font-weight: 600; }
+.attraction-meta { display: flex; align-items: center; gap: 12px; font-size: 12px; opacity: .85; }
+.attraction-location { display: inline-flex; align-items: center; gap: 4px; }
+.attraction-rating { display: inline-flex; align-items: center; gap: 4px; }
+.attraction-desc { margin: 0; font-size: 13px; color: #000; opacity: .9; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.attraction-link { color: #61dafb; font-weight: 600; font-size: 13px; text-decoration: none; }
 
 /* Perfect iPhone frame */
 .chat-widget.mobile-frame { --phone-w: 390px; --phone-h: 844px; --scale-x: calc((100vw - 32px) / var(--phone-w)); --scale-y: calc((100vh - 32px) / var(--phone-h)); --scale: min(var(--scale-x), var(--scale-y)); width: var(--phone-w); height: var(--phone-h); left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%) scale(var(--scale)); border-radius: 42px; border: 2.5px solid #000; box-shadow: 0 24px 60px rgba(0,0,0,0.35); grid-template-rows: 26px auto auto 1fr auto; padding: 0; background: #fff; }
