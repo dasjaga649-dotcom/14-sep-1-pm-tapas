@@ -5,14 +5,63 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { sendChat } from './api/chat';
 
-type ChatMessage = {
-  role: 'user' | 'assistant';
-  kind: 'text' | 'markdown' | 'json';
-  text?: string;
-  json?: unknown;
+type Attraction = {
+  id?: string | number;
+  title: string;
+  location?: string;
+  rating?: number;
+  imageUrl?: string;
+  description?: string;
+  link?: string;
 };
 
+type ChatMessage = {
+  role: 'user' | 'assistant';
+  kind: 'text' | 'markdown' | 'json' | 'attractions';
+  text?: string;
+  json?: unknown;
+  attractions?: Attraction[];
+};
+
+function AttractionsCards({ items }: { items: Attraction[] }) {
+  return (
+    <div className="attractions-cards" role="list">
+      {items.map((a, idx) => (
+        <article key={a.id ?? idx} className="attraction-card" role="listitem">
+          {a.imageUrl && (
+            <div className="attraction-image-wrap">
+              <img className="attraction-image" src={a.imageUrl} alt={a.title} loading="lazy" />
+            </div>
+          )}
+          <div className="attraction-body">
+            <h4 className="attraction-title">{a.title}</h4>
+            <div className="attraction-meta">
+              {a.location && (
+                <span className="attraction-location">
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#000" d="M12 2a7 7 0 0 0-7 7c0 4.6 6 11 6.6 11.6a.5.5 0 0 0 .8 0C13 20 19 13.6 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg>
+                  {a.location}
+                </span>
+              )}
+              {typeof a.rating === 'number' && (
+                <span className="attraction-rating">
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#f2b01e" d="M12 2.5 14.9 9l6.6.5-5 4.2 1.6 6.3L12 16.9 5.9 20l1.6-6.3-5-4.2L9.1 9 12 2.5Z"/></svg>
+                  {a.rating?.toFixed(1)}
+                </span>
+              )}
+            </div>
+            {a.description && <p className="attraction-desc">{a.description}</p>}
+            {a.link && <a href={a.link} target="_blank" rel="noreferrer" className="attraction-link">Read more</a>}
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 function MessageContent({ m }: { m: ChatMessage }) {
+  if (m.kind === 'attractions' && m.attractions) {
+    return <AttractionsCards items={m.attractions} />;
+  }
   if (m.kind === 'json') {
     const pretty = JSON.stringify(m.json, null, 2);
     return (
@@ -37,10 +86,35 @@ export default function App() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const apiBase = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
 
+  function normalizeAttractions(input: any): Attraction[] | null {
+    const arr: any[] | undefined = Array.isArray(input?.attractionsData) ? input.attractionsData
+      : Array.isArray(input?.attractions) ? input.attractions
+      : Array.isArray(input?.items) ? input.items
+      : Array.isArray(input?.data) ? input.data
+      : undefined;
+    if (!arr || arr.length === 0) return null;
+    return arr.map((it: any, idx: number): Attraction => {
+      const title = it.title || it.name || it.placeName || `Attraction ${idx + 1}`;
+      const location = it.location || it.city || it.address || [it.city, it.state].filter(Boolean).join(', ');
+      const ratingRaw = it.rating ?? it.stars ?? it.score;
+      const rating = typeof ratingRaw === 'string' ? parseFloat(ratingRaw) : typeof ratingRaw === 'number' ? ratingRaw : undefined;
+      const imageUrl = it.imageUrl || it.image || it.photo || it.picture || it.thumbnail;
+      const description = it.description || it.desc || it.summary || it.about;
+      const link = it.link || it.url || it.more || undefined;
+      return { id: it.id ?? idx, title, location, rating, imageUrl, description, link };
+    });
+  }
+
   function toAssistantMessage(data: unknown, contentType?: string): ChatMessage {
     if (contentType?.includes('application/json')) {
       try {
-        return { role: 'assistant', kind: 'json', json: typeof data === 'string' ? JSON.parse(data) : data };
+        const obj = typeof data === 'string' ? JSON.parse(data) : data;
+        const shouldShowCards = obj && (obj.text === '[attractionsData]' || obj.type === 'attractionsData' || obj.kind === 'attractions');
+        const normalized = normalizeAttractions(obj);
+        if (shouldShowCards && normalized) {
+          return { role: 'assistant', kind: 'attractions', attractions: normalized };
+        }
+        return { role: 'assistant', kind: 'json', json: obj };
       } catch {
         return { role: 'assistant', kind: 'json', json: data };
       }
@@ -51,6 +125,11 @@ export default function App() {
     if (typeof data === 'string') {
       try {
         const parsed = JSON.parse(data);
+        const normalized = normalizeAttractions(parsed);
+        const shouldShowCards = (parsed as any)?.text === '[attractionsData]' || (parsed as any)?.type === 'attractionsData' || (parsed as any)?.kind === 'attractions';
+        if (shouldShowCards && normalized) {
+          return { role: 'assistant', kind: 'attractions', attractions: normalized };
+        }
         return { role: 'assistant', kind: 'json', json: parsed };
       } catch {
         return { role: 'assistant', kind: 'markdown', text: data };
@@ -58,8 +137,13 @@ export default function App() {
     }
     if (data && typeof data === 'object') {
       const anyData = data as Record<string, unknown>;
+      const shouldShowCards = (anyData as any)?.text === '[attractionsData]' || (anyData as any)?.type === 'attractionsData' || (anyData as any)?.kind === 'attractions';
+      const normalized = normalizeAttractions(anyData);
+      if (shouldShowCards && normalized) {
+        return { role: 'assistant', kind: 'attractions', attractions: normalized };
+      }
       if (typeof anyData.reply === 'string') {
-        return { role: 'assistant', kind: 'markdown', text: anyData.reply };
+        return { role: 'assistant', kind: 'markdown', text: anyData.reply as string };
       }
       return { role: 'assistant', kind: 'json', json: data };
     }
@@ -140,7 +224,10 @@ export default function App() {
         <div className="chat-widget-body">
           <div className="chat-messages iphone-chat">
             {messages.map((m, i) => (
-              <div key={i} className={m.role === 'user' ? 'bubble bubble-user' : 'bubble bubble-assistant'}>
+              <div
+                key={i}
+                className={m.role === 'user' ? 'bubble bubble-user' : m.kind === 'attractions' ? 'bubble bubble-cards' : 'bubble bubble-assistant'}
+              >
                 <MessageContent m={m} />
               </div>
             ))}
