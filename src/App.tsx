@@ -95,21 +95,26 @@ export default function App() {
       </header>
 
       {/* Floating chat widget */}
-      <button
-        type="button"
-        aria-label={open ? 'Close chat' : 'Open chat'}
-        className="chat-launcher"
-        onClick={() => setOpen(o => !o)}
-      >
-        {/* Modern chat/robot icon */}
-        <svg className="icon" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-          <path fill="#000" d="M12 2a1 1 0 0 1 1 1v1.05A7.5 7.5 0 0 1 20.5 11v3.5A3.5 3.5 0 0 1 17 18h-1.382l-2.724 2.724A1.75 1.75 0 0 1 9 19.75V18H7a3.5 3.5 0 0 1-3.5-3.5V11A7.5 7.5 0 0 1 11 4.05V3a1 1 0 0 1 1-1Zm-3.75 9.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Zm7.5 0a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"/>
-        </svg>
-      </button>
+      {!open && (
+        <button
+          type="button"
+          aria-label="Open chat"
+          className="chat-launcher"
+          onClick={() => setOpen(true)}
+        >
+          <svg className="icon" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+            <path fill="#000" d="M12 2a1 1 0 0 1 1 1v1.05A7.5 7.5 0 0 1 20.5 11v3.5A3.5 3.5 0 0 1 17 18h-1.382l-2.724 2.724A1.75 1.75 0 0 1 9 19.75V18H7a3.5 3.5 0 0 1-3.5-3.5V11A7.5 7.5 0 0 1 11 4.05V3a1 1 0 0 1 1-1Zm-3.75 9.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Zm7.5 0a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"/>
+          </svg>
+        </button>
+      )}
 
       <div className={`chat-overlay${open ? ' show' : ''}`} onClick={() => setOpen(false)} />
 
       <div className={`chat-widget mobile-frame${open ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label="Chat widget">
+        <div className="device-notch" aria-hidden="true">
+          <span className="notch-speaker" />
+          <span className="notch-camera" />
+        </div>
         <div className="device-status-bar" aria-hidden="true">
           <span className="status-time">9:41</span>
           <div className="status-icons">
