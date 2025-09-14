@@ -52,3 +52,17 @@
 .btn:disabled { opacity: .6; cursor: not-allowed; }
 
 @media (max-width: 420px) { .chat-widget { width: calc(100% - 32px); } }
+
+/* Overlay that shows on open for mobile-like experience */
+.chat-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 999; }
+.chat-overlay.show { opacity: 1; pointer-events: auto; }
+
+/* Device-like frame and status bar */
+.chat-widget.mobile-frame { border-radius: 28px; border: 2px solid rgba(0,0,0,0.9); padding-top: 8px; box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
+.device-status-bar { height: 18px; display: flex; align-items: center; justify-content: space-between; padding: 2px 10px 0; font-size: 11px; color: #000; background: #fff; border-top-left-radius: 26px; border-top-right-radius: 26px; }
+.status-icons { display: flex; align-items: center; gap: 6px; }
+.status-signal, .status-wifi { width: 14px; height: 10px; border: 1.5px solid #000; border-radius: 2px; position: relative; }
+.status-wifi::before { content: ''; position: absolute; inset: 2px; border-top: 2px solid #000; border-left: 2px solid transparent; border-right: 2px solid transparent; border-bottom: 0; border-radius: 50%; }
+.status-battery { width: 18px; height: 10px; border: 1.5px solid #000; border-radius: 2px; display: inline-flex; align-items: center; padding: 1px; position: relative; }
+.status-battery::after { content: ''; position: absolute; right: -3px; top: 3px; width: 2px; height: 4px; background: #000; border-radius: 1px; }
+.battery-level { width: 60%; height: 100%; background: #000; border-radius: 1px; }
