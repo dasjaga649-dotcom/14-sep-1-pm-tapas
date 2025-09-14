@@ -107,7 +107,17 @@ export default function App() {
         </svg>
       </button>
 
-      <div className={`chat-widget${open ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label="Chat widget">
+      <div className={`chat-overlay${open ? ' show' : ''}`} onClick={() => setOpen(false)} />
+
+      <div className={`chat-widget mobile-frame${open ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label="Chat widget">
+        <div className="device-status-bar" aria-hidden="true">
+          <span className="status-time">9:41</span>
+          <div className="status-icons">
+            <span className="status-signal"></span>
+            <span className="status-wifi"></span>
+            <span className="status-battery"><span className="battery-level"></span></span>
+          </div>
+        </div>
         <div className="chat-widget-header">
           <div className="chat-widget-title">Chatbot</div>
           <div className="chat-endpoint">{apiBase.replace(/\/$/, '')}/chat</div>
