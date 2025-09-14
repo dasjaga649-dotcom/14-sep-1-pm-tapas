@@ -1,6 +1,6 @@
 import './App.css';
 import './chat.css';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { sendChat } from './api/chat';
@@ -24,36 +24,111 @@ type ChatMessage = {
 };
 
 function AttractionsCards({ items }: { items: Attraction[] }) {
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState<string>('All');
+  const [minRating, setMinRating] = useState<number>(0);
+  const [showFilter, setShowFilter] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 9;
+
+  const categories = useMemo(() => {
+    const s = new Set<string>();
+    items.forEach((a: any) => {
+      const c = a?.category ?? a?.type ?? a?.category_name ?? a?.kind ?? null;
+      if (c) s.add(String(c));
+    });
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return items.filter((a: any) => {
+      const cat = String(a?.category ?? a?.type ?? a?.category_name ?? 'Other');
+      const matchesCat = category === 'All' || cat === category;
+      const r = typeof a?.rating === 'number' ? a.rating : 0;
+      const matchesRating = !minRating || r >= minRating;
+      const text = [a.title, a.location, a.description].filter(Boolean).join(' ').toLowerCase();
+      const matchesQ = !q || text.includes(q);
+      return matchesCat && matchesRating && matchesQ;
+    });
+  }, [items, search, category, minRating]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  useEffect(() => { setPage(1); }, [search, category, minRating, items.length]);
+  const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+
   return (
-    <div className="attractions-cards" role="list">
-      {items.map((a, idx) => (
-        <article key={a.id ?? idx} className="attraction-card" role="listitem">
-          {a.imageUrl && (
-            <div className="attraction-image-wrap">
-              <img className="attraction-image" src={a.imageUrl} alt={a.title} loading="lazy" />
+    <div className="attractions-wrapper">
+      <div className="attractions-toolbar">
+        <div className="search-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#000" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"/></svg>
+          <input className="search-input" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search attractions..." />
+        </div>
+        <div className="filter-group">
+          <button type="button" className="filter-trigger" onClick={() => setShowFilter(v => !v)}>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="#000" d="M3 5h18v2H3V5Zm4 6h10v2H7v-2Zm3 6h4v2h-4v-2Z"/></svg>
+            Filter
+          </button>
+          {showFilter && (
+            <div className="filter-panel">
+              <div className="filter-row">
+                <label className="filter-label">Category</label>
+                <select className="filter-select" value={category} onChange={e => setCategory(e.target.value)}>
+                  <option>All</option>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="filter-row">
+                <label className="filter-label">Minimum Rating</label>
+                <select className="filter-select" value={minRating} onChange={e => setMinRating(Number(e.target.value))}>
+                  <option value={0}>Any Rating</option>
+                  <option value={3}>3.0+ Stars</option>
+                  <option value={3.5}>3.5+ Stars</option>
+                  <option value={4}>4.0+ Stars</option>
+                  <option value={4.5}>4.5+ Stars</option>
+                </select>
+              </div>
             </div>
           )}
-          <div className="attraction-body">
-            <h4 className="attraction-title">{a.title}</h4>
-            <div className="attraction-meta">
-              {a.location && (
-                <span className="attraction-location">
-                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#000" d="M12 2a7 7 0 0 0-7 7c0 4.6 6 11 6.6 11.6a.5.5 0 0 0 .8 0C13 20 19 13.6 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg>
-                  {a.location}
-                </span>
-              )}
-              {typeof a.rating === 'number' && (
-                <span className="attraction-rating">
-                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#f2b01e" d="M12 2.5 14.9 9l6.6.5-5 4.2 1.6 6.3L12 16.9 5.9 20l1.6-6.3-5-4.2L9.1 9 12 2.5Z"/></svg>
-                  {a.rating?.toFixed(1)}
-                </span>
-              )}
+        </div>
+      </div>
+
+      <div className="attractions-cards" role="list">
+        {pageItems.map((a, idx) => (
+          <article key={a.id ?? idx} className="attraction-card" role="listitem">
+            {a.imageUrl && (
+              <div className="attraction-image-wrap">
+                <img className="attraction-image" src={a.imageUrl} alt={a.title} loading="lazy" />
+              </div>
+            )}
+            <div className="attraction-body">
+              <h4 className="attraction-title">{a.title}</h4>
+              <div className="attraction-meta">
+                {a.location && (
+                  <span className="attraction-location">
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#000" d="M12 2a7 7 0 0 0-7 7c0 4.6 6 11 6.6 11.6a.5.5 0 0 0 .8 0C13 20 19 13.6 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg>
+                    {a.location}
+                  </span>
+                )}
+                {typeof a.rating === 'number' && (
+                  <span className="attraction-rating">
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#f2b01e" d="M12 2.5 14.9 9l6.6.5-5 4.2 1.6 6.3L12 16.9 5.9 20l1.6-6.3-5-4.2L9.1 9 12 2.5Z"/></svg>
+                    {a.rating?.toFixed(1)}
+                  </span>
+                )}
+              </div>
+              {a.description && <p className="attraction-desc">{a.description}</p>}
+              {a.link && <a href={a.link} target="_blank" rel="noreferrer" className="attraction-link">Read more</a>}
             </div>
-            {a.description && <p className="attraction-desc">{a.description}</p>}
-            {a.link && <a href={a.link} target="_blank" rel="noreferrer" className="attraction-link">Read more</a>}
-          </div>
-        </article>
-      ))}
+          </article>
+        ))}
+      </div>
+
+      <div className="attractions-pagination">
+        <button type="button" className="page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} aria-label="Previous page">‹</button>
+        <span className="page-indicator">Page {page} of {pageCount}</span>
+        <button type="button" className="page-btn" onClick={() => setPage(p => Math.min(pageCount, p + 1))} disabled={page === pageCount} aria-label="Next page">›</button>
+      </div>
     </div>
   );
 }
